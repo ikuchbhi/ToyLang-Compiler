@@ -13,8 +13,43 @@ typedef struct {
     int defined;
 } Variable;
 
-Variable vars[100];
-int var_count = 0;
+typedef struct node{
+    char name[256];
+    struct node *next;
+} node;
+
+
+node* variables_defined = NULL;
+
+node* create_node(const char *name){
+    node *temp = (node*)malloc(sizeof(node));
+    strcpy(temp->name, name);
+    temp->next = NULL;
+    return temp;
+}
+
+void insert(node **head, const char *name){
+    if(*head == NULL){
+        *head = create_node(name);
+    }else{
+        node *temp = *head;
+        while(temp->next != NULL){
+            temp = temp->next;
+        }
+        temp->next = create_node(name);
+    }
+}
+
+int search(node *head, const char *name){
+    node *temp = head;
+    while(temp != NULL){
+        if(strcmp(temp->name, name) == 0){
+            return 1;
+        }
+        temp = temp->next;
+    }
+    return 0;
+}
 
 int is_keyword(const char *str) {
     const char *keywords[] = {"int", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
@@ -25,10 +60,7 @@ int is_keyword(const char *str) {
 }
 
 int is_duplicate(const char *str) {
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(vars[i].name, str) == 0) return 1;
-    }
-    return 0;
+    return search(variables_defined, str);
 }
 
 int check(const char *str) {
@@ -53,11 +85,7 @@ int check(const char *str) {
 }
 
 void add_variable(const char *str) {
-    if (var_count < 100) {
-        strcpy(vars[var_count].name, str);
-        vars[var_count].defined = 1;
-        var_count++;
-    }
+    insert(&variables_defined, str);
 }
 %}
 
