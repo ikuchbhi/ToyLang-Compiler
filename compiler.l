@@ -67,7 +67,7 @@ INTEGER \(([0-9]+),[ ]*([0-9]+)\)
 CHARACTER '\?.'
 STRING \"([^"\\]|\\.)*\"
 ARITH_OP [+\-*/%]
-ASSIGN_OP :=|\+=|-=|\*=|/=|%=
+ASSIGN_OP :=|\+=|-=|\*=|\/=|%=
 REL_OP [=<>]=?|<>
 SEPARATOR [(){};,:]
 COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
@@ -135,12 +135,7 @@ WHITESPACE [ \t\n\r]+
 {STRING}       { printf("STRING: %s\n", yytext); }
 
 {ARITH_OP}     { printf("ARITHMETIC OPERATOR: %s\n", yytext); }
-":="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-"+="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-"-="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-"*="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-"/="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-"%="           { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
+{ASSIGN_OP}    { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
 {REL_OP}       { printf("RELATIONAL OPERATOR: %s\n", yytext); }
 
 {SEPARATOR}    { printf("SEPARATOR: %s\n", yytext); }
