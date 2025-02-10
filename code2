@@ -1,0 +1,246 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int flag = 0; 
+int expecting_type = 0;
+int c=1;
+
+
+typedef struct {
+    char name[50];
+    int defined;
+} Variable;
+
+typedef struct node{
+    char name[256];
+    struct node *next;
+} node;
+
+node* variables_defined = NULL;
+
+node* create_node(const char *name){
+    node *temp = (node*)malloc(sizeof(node));
+    strcpy(temp->name, name);
+    temp->next = NULL;
+    return temp;
+}
+
+void insert(node **head, const char *name){
+    if(*head == NULL){
+        *head = create_node(name);
+    }else{
+        node *temp = *head;
+        while(temp->next != NULL){
+            temp = temp->next;
+        }
+        temp->next = create_node(name);
+    }
+}
+
+int search(node *head, const char *name){
+    node *temp = head;
+    while(temp != NULL){
+        if(strcmp(temp->name, name) == 0){
+            return 1;
+        }
+        temp = temp->next;
+    }
+    return 0;
+}
+
+int is_keyword(const char *str) {
+    const char *keywords[] = {"int", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
+    for (int i = 0; i < 17; i++) {
+        if (strcmp(str, keywords[i]) == 0) return 1;
+    }
+    return 0;
+}
+
+int is_duplicate(const char *str) {
+    return search(variables_defined, str);
+}
+
+int check(const char *str) {
+    int len = strlen(str);
+    if (len == 0) return 0; 
+    if (!islower(str[0])) return 0; 
+
+    int un = 0;
+    
+    for (int i = 0; i < len; i++) {
+        if (islower(str[i]) || isdigit(str[i])) {
+            continue; 
+        }
+        if (str[i] == '_') {
+            un++;
+            if (un > 1) return 0; 
+        } else {
+            return 0; 
+        }
+    }
+    return 1; 
+}
+
+void add_variable(const char *str) {
+    insert(&variables_defined, str);
+}
+%}
+
+KEYWORD int|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan
+IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
+INTEGER \(([0-9]+),[ ]*([0-9]+)\)
+CHARACTER '\?.'
+STRING \"([^"\\]|\\.)*\"
+ARITH_OP [+\-*/%]
+ASSIGN_OP :=|\+=|-=|\*=|\/=|%=
+REL_OP [=<>]=?|<>
+SEPARATOR [(){};,:]
+COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
+WHITESPACE [ \t\n\r]+
+
+%%
+"VarDecl"      {if(c){flag = 1;c=0;}; expecting_type = 0; printf("KEYWORD: %s\n", yytext); }
+"end"          { flag = 0; printf("KEYWORD: %s\n", yytext); }
+
+("print"|"scan")\(.*\);? {
+    char* str = yytext;
+    char *a = "()";
+    int j=0;
+    while(str[j]!=a[0]){
+        j++;
+    }
+    printf("length 0 = %lu\n",strlen(str));
+    printf("done with it.\n");
+    int i=0;
+    int var=0;
+    printf("length 1 = %lu\n",strlen(str));
+
+    while(str[i]!=a[0]){
+        i++;
+    }
+    i++;
+    int c=0;
+    while (str[i] != '\0') {
+        if(str[i]==';'){
+            break;
+        }
+        if (str[i] == '"') {
+            flag = !flag;
+        } 
+        else if (flag && str[i] == '@') {
+            printf("inc\n");
+            var++;  
+        }
+        else if (!flag) {
+            if(str[i]==a[0] || str[i]==a[1]){
+                c = !c;
+            }
+            if ((!c) && str[i]==',' && (str[i+1] != a[1] || str[i+1] != ' ')) {
+                printf("dec\n");
+                var--;
+            }
+        }
+        i++;
+    }
+    printf("length 2 = %lu\n",strlen(str));
+    if(var!=0){
+        printf("LEXICAL ERROR: No of @ not matching\n");
+    }
+    if (str[strlen(str) - 1] != ';') {
+        printf("LEXICAL ERROR: Missing semicolon at the end \n");
+    }
+    printf("FUNCTION CALL: %s\n", yytext);
+    for (int i = strlen(str) - 1; i >= j; i--) {
+        unput(str[i]);
+    }
+}
+
+{IDENTIFIER}   {
+    if (flag && !expecting_type) { 
+        if (is_keyword(yytext)) {
+            printf("LEXICAL ERROR: Keyword used as identifier: %s\n", yytext);
+        } else if (flag && is_duplicate(yytext)) {
+            printf("LEXICAL ERROR: Duplicate variable declaration: %s\n", yytext);
+        } else{
+            if(check(yytext)){
+                add_variable(yytext);
+                printf("IDENTIFIER (variable name): %s\n", yytext);
+            } else{
+                printf("LEXICAL ERROR : Invalid Variable Name \n");
+            }
+        }
+        expecting_type = 1; 
+    } else if (flag && expecting_type) { 
+        if (!is_keyword(yytext)) {
+            printf("LEXICAL ERROR: Invalid variable type: %s\n", yytext);
+        } else {
+            printf("IDENTIFIER (variable type): %s\n", yytext);
+        }
+        expecting_type = 0; 
+    } else if(!flag && is_keyword(yytext)){
+        printf("KEYWORD: %s\n", yytext);
+    }else if(is_duplicate(yytext)) {
+        printf("IDENTIFIER: %s\n", yytext);
+    }
+    else{
+        printf("LEXICAL ERROR : No variable matching\n");
+    }
+}
+
+{INTEGER} { 
+    int num, base;
+    if (sscanf(yytext, "(%d, %d)", &num, &base) == 2) {
+        int valid = 1;
+        int temp = num;
+        while (temp > 0) {
+            int digit = temp % 10;
+            if (digit >= base) {
+                valid = 0;
+                break;
+            }
+            temp /= 10;
+        }
+        if (valid) {
+            printf("INTEGER (Base %d): %s\n", base, yytext);
+        } else {
+            printf("LEXICAL ERROR: Invalid digit in base %d: %s\n", base, yytext);
+        }
+    } else {
+        printf("LEXICAL ERROR: Invalid integer format (missing base): %s\n", yytext);
+    }
+}
+{CHARACTER}    { printf("CHARACTER: %s\n", yytext); }
+{STRING}       { printf("STRING: %s\n", yytext); }
+
+{ARITH_OP}     { printf("ARITHMETIC OPERATOR: %s\n", yytext); }
+{ASSIGN_OP}    { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
+{REL_OP}       { printf("RELATIONAL OPERATOR: %s\n", yytext); }
+
+{SEPARATOR}    { printf("SEPARATOR: %s\n", yytext); }
+{COMMENT}      { printf("COMMENT\n"); }
+{WHITESPACE}   { /* Ignore whitespace */ }
+
+.              { printf("LEXICAL ERROR: %s\n", yytext); }
+
+%%
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+    FILE *file = fopen(argv[1], "r");
+    if (!file) {
+        perror("Error opening file");
+        return 1;
+    }
+    yyin = file;
+    yylex();
+    fclose(file);
+    return 0;
+}
+
+int yywrap() { return 1; }
