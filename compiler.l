@@ -89,6 +89,8 @@ void add_variable(const char *str) {
 }
 %}
 
+%s VARDECL_STATE
+
 KEYWORD int|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan
 IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
 INTEGER \(([0-9]+),[ ]*([0-9]+)\)
@@ -102,16 +104,19 @@ COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
 WHITESPACE [ \t\n\r]+
 
 %%
-"VarDecl"      {if(c){flag = 1;c=0;}; expecting_type = 0; printf("KEYWORD: %s\n", yytext); }
-"end"          { flag = 0; printf("KEYWORD: %s\n", yytext); }
+"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("KEYWORD: %s\n", yytext); }
+"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("KEYWORD: %s\n", yytext); }
+"VarDecl"   {printf("KEYWORD: %s\n", yytext); }
 
-{IDENTIFIER}   {
-    if (flag && !expecting_type) { 
-        if (is_keyword(yytext)) {
+<VARDECL_STATE>{IDENTIFIER} {
+    if(!expecting_type){
+        if(is_keyword(yytext)){
             printf("LEXICAL ERROR: Keyword used as identifier: %s\n", yytext);
-        } else if (flag && is_duplicate(yytext)) {
+        }
+        else if(is_duplicate(yytext)){
             printf("LEXICAL ERROR: Duplicate variable declaration: %s\n", yytext);
-        } else{
+        }
+        else{
             if(check(yytext)){
                 add_variable(yytext);
                 printf("IDENTIFIER (variable name): %s\n", yytext);
@@ -119,15 +124,21 @@ WHITESPACE [ \t\n\r]+
                 printf("LEXICAL ERROR : Invalid Variable Name \n");
             }
         }
-        expecting_type = 1; 
-    } else if (flag && expecting_type) { 
-        if (!is_keyword(yytext)) {
-            printf("LEXICAL ERROR: Invalid variable type: %s\n", yytext);
-        } else {
-            printf("IDENTIFIER (variable type): %s\n", yytext);
+        expecting_type = 1;
+    }
+    else{
+        if(is_keyword(yytext)){
+            printf("KEYWORD: %s\n", yytext);
         }
-        expecting_type = 0; 
-    } else if(!flag && is_keyword(yytext)){
+        else{
+            printf("LEXICAL ERROR: Invalid variable type: %s\n", yytext);
+        }
+        expecting_type = 0;
+    }
+}
+
+{IDENTIFIER}   {
+    if(is_keyword(yytext)){
         printf("KEYWORD: %s\n", yytext);
     }else if(is_duplicate(yytext)) {
         printf("IDENTIFIER: %s\n", yytext);
