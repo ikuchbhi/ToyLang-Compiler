@@ -178,7 +178,7 @@ WHITESPACE [ \t\n\r]+
 {REL_OP}       { printf("RELATIONAL OPERATOR: %s\n", yytext); }
 
 {SEPARATOR}    { printf("SEPARATOR: %s\n", yytext); }
-{COMMENT}      { printf("COMMENT\n"); }
+{COMMENT}      { printf("COMMENT: %s\n",yytext); }
 {WHITESPACE}   { /* Ignore whitespace */ }
 
 .              { printf("LEXICAL ERROR: %s\n", yytext); }
