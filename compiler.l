@@ -137,6 +137,51 @@ WHITESPACE [ \t\n\r]+
     }
 }
 
+("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\); {
+    char* str = yytext;
+    int cnt_formatted = 0;
+    for(int i = 0; i < strlen(str); i++){
+        if(str[i] == '@'){
+            cnt_formatted++;
+        }
+    }
+
+    char *last_quote = strrchr(str, '"');
+    int count = 0;
+    char *ptr = last_quote + 1;
+    while (*ptr) {
+        if (strncmp(ptr, "(", 1) == 0) {
+            ptr++;
+            while (*ptr && *ptr != ')') {
+                ptr++;
+            }
+        } 
+        else if(strncmp(ptr, ",", 1) == 0){
+            count++;
+        }
+        ptr++;
+        
+    }
+    if (count != cnt_formatted) {
+        printf("LEXICAL ERROR: Mismatch in formatted specifiers and arguments\n");
+        break;
+    }
+    
+    if(str[4] == '(') {
+        printf("KEYWORD: scan\n");
+        yyless(4);
+    }
+    else{
+        printf("KEYWORD: print\n");
+        yyless(5);
+    }
+}
+
+("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
+    printf("LEXICAL ERROR: Invalid Statement - Missing semicolon at the end \n");
+}
+
+
 {IDENTIFIER}   {
     if(is_keyword(yytext)){
         printf("KEYWORD: %s\n", yytext);
