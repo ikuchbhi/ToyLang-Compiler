@@ -1,0 +1,50 @@
+<Program> ::= "begin program:" <VarDeclBlock> <Statements> "end program"
+
+<VarDeclBlock> ::= "begin VarDecl:" <Declarations> "end VarDecl"
+<Declarations> ::= <Declaration> ";" <Declarations> | ε
+
+# Scalar or Array
+<Declaration> ::= "(" <Identifier> "," <DataType> ")" | "(" <Identifier> "[" <DecimalConstant> "]" "," <DataType> ")"
+
+<DataType> ::= "int" | "char"
+
+<Statements> ::= <Statement> <Statements> | ε
+<Statement> ::= <PrintStmt> | <ScanStmt> | <AssignStmt> | <BlockStmt> | <IfStmt> | <WhileStmt> | <ForStmt>
+
+<PrintStmt> ::= "print" "(" <FormattedString> "," <ExprList> ")" ";"
+<ScanStmt> ::= "scan" "(" <FormattedString> "," <VarList> ")" ";"
+<ExprList> ::= <Expression> "," <ExprList> | <Expression>
+<VarList> ::= <Identifier> "," <VarList> | <Identifier>
+
+<AssignStmt> ::= <Identifier> <AssignOp> <Expression> ";"
+<AssignOp> ::= ":=" | "+=" | "-=" | "*=" | "/=" | "%="
+
+<BlockStmt> ::= "begin" <Statements> "end" ";"
+
+<IfStmt> ::= "if" "(" <Condition> ")" "then" <BlockStmt> | "if" "(" <Condition> ")" "then" <BlockStmt> "else" <BlockStmt> ";"
+<Condition> ::= <Expression> <RelOp> <Expression> | <Expression>
+<RelOp> ::= "=" | ">" | "<" | ">=" | "<=" | "<>"    
+
+<WhileStmt> ::= "while" "(" <Condition> ")" <BlockStmt>
+
+<ForStmt> ::= "for" <Identifier> ":=" <Expression> "to" <Expression> ("inc" | "dec") <Expression> "do" <BlockStmt>
+
+<Expression> ::= <Term> | <Expression> <AddOp> <Term>
+<Term> ::= <Factor> | <Term> <MulOp> <Factor>
+<Factor> ::= "(" <Expression> ")" | <Constant> | <Identifier> | <Identifier> "[" <Expression> "]"
+
+<AddOp> ::= "+" | "-"
+<MulOp> ::= "*" | "/" | "%"
+
+<Identifier> ::= ^[a-z][a-z0-9]*[_]?[a-z0-9]+$
+
+<Constant> ::= <IntConstant> | <CharConstant> | <StringConstant>
+<IntConstant> ::= "(" <DecimalConstant> ", 10)" | "(" <BinaryConstant> ", 2)" | "(" <OctalConstant> ", 8)"
+<BinaryConstant> ::= ^(0|1)+$
+<OctalConstant> ::= ^[0-7]+$
+<DecimalConstant> ::= ^[0-9]+$
+
+<CharConstant> ::= ^.{1}$
+<StringConstant> ::= ^["].["]$
+
+<FormattedString> ::= ^["](.[@]*.)*["]$
