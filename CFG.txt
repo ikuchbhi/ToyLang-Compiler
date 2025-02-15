@@ -36,7 +36,7 @@
 <AddOp> ::= "+" | "-"
 <MulOp> ::= "*" | "/" | "%"
 
-<Identifier> ::= ^[a-z][a-z0-9]*[_]?[a-z0-9]+$
+<Identifier> ::= ^[a-z][a-z0-9]*(_[a-z0-9]*)?$
 
 <Constant> ::= <IntConstant> | <CharConstant> | <StringConstant>
 <IntConstant> ::= "(" <DecimalConstant> ", 10)" | "(" <BinaryConstant> ", 2)" | "(" <OctalConstant> ", 8)"
@@ -44,7 +44,8 @@
 <OctalConstant> ::= ^[0-7]+$
 <DecimalConstant> ::= ^[0-9]+$
 
-<CharConstant> ::= ^.{1}$
-<StringConstant> ::= ^["].["]$
+<CharConstant> ::= ^['].[']$
 
-<FormattedString> ::= ^["](.[@]*.)*["]$
+<FormattedString> ::= ^["]([^@]*[@][^@]*)*["]$
+
+<StringConstant> ::= ^["].*["]$
