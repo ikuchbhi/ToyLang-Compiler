@@ -52,8 +52,8 @@ int search(node *head, const char *name){
 }
 
 int is_keyword(const char *str) {
-    const char *keywords[] = {"int", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
-    for (int i = 0; i < 17; i++) {
+    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main","then", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
+    for (int i = 0; i < 19; i++) {
         if (strcmp(str, keywords[i]) == 0) return 1;
     }
     return 0;
@@ -91,7 +91,7 @@ void add_variable(const char *str) {
 
 %s VARDECL_STATE
 
-KEYWORD int|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan
+KEYWORD int|char|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan|then
 IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
 INTEGER \(([0-9]+),[ ]*([0-9]+)\)
 CHARACTER '\?.'
@@ -104,34 +104,35 @@ COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
 WHITESPACE [ \t\n\r]+
 
 %%
-"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("KEYWORD: %s\n", yytext); }
-"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("KEYWORD: %s\n", yytext); }
-"VarDecl"   {printf("KEYWORD: %s\n", yytext); }
+"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("%s KEYWORD\n", yytext); }
+"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("%s KEYWORD\n", yytext); }
+"VarDecl"   {printf("%s KEYWORD\n", yytext); }
+
 
 <VARDECL_STATE>{IDENTIFIER} {
     if(!expecting_type){
         if(is_keyword(yytext)){
-            printf("LEXICAL ERROR: Keyword used as identifier: %s\n", yytext);
+            printf("%s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
         }
         else if(is_duplicate(yytext)){
-            printf("LEXICAL ERROR: Duplicate variable declaration: %s\n", yytext);
+            printf("%s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
         }
         else{
             if(check(yytext)){
                 add_variable(yytext);
-                printf("IDENTIFIER (variable name): %s\n", yytext);
+                printf("%s IDENTIFIER\n", yytext);
             } else{
-                printf("LEXICAL ERROR : Invalid Variable Name \n");
+                printf("%s LEXICAL ERROR : Invalid identifier\n",yytext);
             }
         }
         expecting_type = 1;
     }
     else{
         if(is_keyword(yytext)){
-            printf("KEYWORD: %s\n", yytext);
+            printf("%s KEYWORD\n", yytext);
         }
         else{
-            printf("LEXICAL ERROR: Invalid variable type: %s\n", yytext);
+            printf("%s LEXICAL ERROR: Invalid variable type\n", yytext);
         }
         expecting_type = 0;
     }
@@ -162,34 +163,44 @@ WHITESPACE [ \t\n\r]+
         ptr++;
         
     }
-    if (count != cnt_formatted) {
-        printf("LEXICAL ERROR: Mismatch in formatted specifiers and arguments\n");
-        break;
-    }
-    
     if(str[4] == '(') {
-        printf("KEYWORD: scan\n");
-        yyless(4);
+
+        if(cnt_formatted != count){
+            printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        }
+        else{
+        printf("%s Valid Input Statement\n", str);
+        }
     }
     else{
-        printf("KEYWORD: print\n");
-        yyless(5);
+        if(cnt_formatted != count){
+            printf("%s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+        }
+        else{
+        printf("%s Valid Input Statement\n", str);
+        }
     }
 }
 
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
-    printf("LEXICAL ERROR: Invalid Statement - Missing semicolon at the end \n");
+    char* str = yytext;
+    if(str[4] == '(') {
+        printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+    }
+    else{
+        printf("%s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+    }
 }
 
 
 {IDENTIFIER}   {
     if(is_keyword(yytext)){
-        printf("KEYWORD: %s\n", yytext);
+        printf("%s KEYWORD\n", yytext);
     }else if(is_duplicate(yytext)) {
-        printf("IDENTIFIER: %s\n", yytext);
+        printf("%s IDENTIFIER\n", yytext);
     }
     else{
-        printf("LEXICAL ERROR : No variable matching\n");
+        printf("LEXICAL ERROR : Undefined identifier\n");
     }
 }
 
@@ -207,26 +218,26 @@ WHITESPACE [ \t\n\r]+
             temp /= 10;
         }
         if (valid) {
-            printf("INTEGER (Base %d): %s\n", base, yytext);
+            printf("%s INTEGER CONSTANT\n", yytext);
         } else {
-            printf("LEXICAL ERROR: Invalid digit in base %d: %s\n", base, yytext);
+            printf("%s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
         }
     } else {
-        printf("LEXICAL ERROR: Invalid integer format (missing base): %s\n", yytext);
+        printf("%s LEXICAL ERROR: Invalid Integer Constant", yytext);
     }
 }
-{CHARACTER}    { printf("CHARACTER: %s\n", yytext); }
-{STRING}       { printf("STRING: %s\n", yytext); }
+{CHARACTER}    { printf("%s CHARACTER\n", yytext); }
+{STRING}       { printf("%s STRING\n", yytext); }
 
-{ARITH_OP}     { printf("ARITHMETIC OPERATOR: %s\n", yytext); }
-{ASSIGN_OP}    { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-{REL_OP}       { printf("RELATIONAL OPERATOR: %s\n", yytext); }
+{ARITH_OP}     { printf("%s ARITHMETIC OPERATOR\n", yytext); }
+{ASSIGN_OP}    { printf("%s ASSIGNMENT OPERATOR\n", yytext); }
+{REL_OP}       { printf("%s RELATIONAL OPERATOR\n", yytext); }
 
-{SEPARATOR}    { printf("SEPARATOR: %s\n", yytext); }
-{COMMENT}      { printf("COMMENT: %s\n",yytext); }
+{SEPARATOR}    { printf("%s SEPARATOR\n", yytext); }
+{COMMENT}      { printf("%s COMMENT\n",yytext); }
 {WHITESPACE}   { /* Ignore whitespace */ }
 
-.              { printf("LEXICAL ERROR: %s\n", yytext); }
+.              { printf("%s LEXICAL ERROR\n", yytext); }
 
 %%
 
