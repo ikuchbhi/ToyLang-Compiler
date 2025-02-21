@@ -169,6 +169,16 @@ WHITESPACE [ \t\n\r]+
             printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
         }
         else{
+        char *start_quote = strchr(str, '"');
+        char *end_quote = strrchr(str, '"');
+        if (start_quote && end_quote && start_quote != end_quote) {
+            for (char *ptr = start_quote + 1; ptr < end_quote; ptr++) {
+            if (*ptr != '@' && *ptr != ',' && !isspace(*ptr)) {
+                printf("%s LEXICAL ERROR: Invalid Input Statement\n", yytext);
+                break;
+            }
+            }
+        }
         printf("%s Valid Input Statement\n", str);
         }
     }
