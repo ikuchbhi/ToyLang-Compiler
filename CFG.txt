@@ -11,23 +11,31 @@
 <Statements> ::= <Statement> <Statements> | ε
 <Statement> ::= <PrintStmt> | <ScanStmt> | <AssignStmt> | <BlockStmt> | <IfStmt> | <WhileStmt> | <ForStmt>
 
-<PrintStmt> ::= "print" "(" <FormattedString> "," <ExprList> ")" ";"
-<ScanStmt> ::= "scan" "(" <FormattedString> "," <VarList> ")" ";"
+<PrintStmt> ::= <ConstantPrintStmt> | <FormattedPrintStmt>
+<ConstantPrintStmt> ::= "print" "(" <StringConstant> ")" ";"
+<FormattedPrintStmt> ::= "print" "(" <FormattedPrintString> "," <ExprList> ")" ";"
+
+<ScanStmt> ::= "scan" "(" <FormattedScanString> "," <VarList> ")" ";"
 <ExprList> ::= <Expression> "," <ExprList> | <Expression>
 <VarList> ::= <Identifier> "," <VarList> | <Identifier>
 
 <AssignStmt> ::= <Identifier> <AssignOp> <Expression> ";"
 <AssignOp> ::= ":=" | "+=" | "-=" | "*=" | "/=" | "%="
 
-<BlockStmt> ::= "begin" <Statements> "end" ";"
+<BlockStmt> ::= "begin" <BlockStatements> "end" ";"
+<BlockStatements> ::= <Statement> <BlockStatements> | <Statement>
 
-<IfStmt> ::= "if" "(" <Condition> ")" "then" <BlockStmt> | "if" "(" <Condition> ")" "then" <BlockStmt> "else" <BlockStmt> ";"
+<SimpleBlockStmt> ::= "begin" <SimpleBlockStatements> "end" ";"
+<SimpleBlockStatements> ::= <SimpleStatement> <SimpleBlockStatements> | <SimpleStatement>
+<SimpleStatement> ::= <PrintStmt> | <ScanStmt> | <AssignStmt>
+
+<IfStmt> ::= "if" "(" <Condition> ")" "then" <SimpleBlockStmt> | "if" "(" <Condition> ")" "then" <SimpleBlockStmt> "else" <SimpleBlockStmt> ";"
 <Condition> ::= <Expression> <RelOp> <Expression> | <Expression>
 <RelOp> ::= "=" | ">" | "<" | ">=" | "<=" | "<>"    
 
-<WhileStmt> ::= "while" "(" <Condition> ")" <BlockStmt>
+<WhileStmt> ::= "while" "(" <Condition> ")" <SimpleBlockStmt>
 
-<ForStmt> ::= "for" <Identifier> ":=" <Expression> "to" <Expression> ("inc" | "dec") <Expression> "do" <BlockStmt>
+<ForStmt> ::= "for" <Identifier> ":=" <Expression> "to" <Expression> ("inc" | "dec") <Expression> "do" <SimpleBlockStmt>
 
 <Expression> ::= <Term> | <Expression> <AddOp> <Term>
 <Term> ::= <Factor> | <Term> <MulOp> <Factor>
@@ -46,6 +54,7 @@
 
 <CharConstant> ::= ^['].[']$
 
-<FormattedString> ::= ^["]([^@]*[@][^@]*)*["]$
+<FormattedPrintString> ::= ^["]([^@]*[@][^@]*)*["]$
+<FormattedScanString> ::= ^["](@([,][@])*)["]$
 
 <StringConstant> ::= ^["].*["]$
