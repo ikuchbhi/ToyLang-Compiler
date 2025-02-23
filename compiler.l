@@ -52,8 +52,8 @@ int search(node *head, const char *name){
 }
 
 int is_keyword(const char *str) {
-    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main","then", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
-    for (int i = 0; i < 19; i++) {
+    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main","then", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan","to","do"};
+    for (int i = 0; i < 21; i++) {
         if (strcmp(str, keywords[i]) == 0) return 1;
     }
     return 0;
@@ -169,27 +169,44 @@ WHITESPACE [ \t\n\r]+
             printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
         }
         else{
+        int flag = 1;
         char *start_quote = strchr(str, '"');
         char *end_quote = strrchr(str, '"');
         if (start_quote && end_quote && start_quote != end_quote) {
             for (char *ptr = start_quote + 1; ptr < end_quote; ptr++) {
-            if (*ptr != '@' && *ptr != ',' && !isspace(*ptr)) {
-                printf("%s LEXICAL ERROR: Invalid Input Statement\n", yytext);
+            if(isspace(*ptr)){
+                continue;
+            }
+            else if(flag ==1 && *ptr == '@'){
+                flag = 0;
+            }
+            else if(flag == 0 && *ptr == ','){
+                flag = 1;
+            }
+            else{
+                printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
                 break;
             }
-            }
         }
-        printf("%s Valid Input Statement\n", str);
         }
-    }
+        if(flag == 0){
+            printf("%s Valid Input Statement\n", yytext);
+        }
+        else{
+            printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        }
+        }
+        }
+    
     else{
         if(cnt_formatted != count){
             printf("%s LEXICAL ERROR: Invalid Output Statement\n",yytext);
         }
         else{
-        printf("%s Valid Input Statement\n", str);
+        printf("%s Valid Output Statement\n", yytext);
         }
     }
+    
 }
 
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
@@ -206,12 +223,16 @@ WHITESPACE [ \t\n\r]+
 {IDENTIFIER}   {
     if(is_keyword(yytext)){
         printf("%s KEYWORD\n", yytext);
-    }else if(is_duplicate(yytext)) {
+    }
+    else{
+        printf("%s IDENTIFIER\n", yytext);
+    }
+    /*else if(is_duplicate(yytext)) {
         printf("%s IDENTIFIER\n", yytext);
     }
     else{
         printf("LEXICAL ERROR : Undefined identifier\n");
-    }
+    }*/
 }
 
 {INTEGER} { 
