@@ -29,7 +29,7 @@
 <SimpleBlockStatements> ::= <SimpleStatement> <SimpleBlockStatements> | <SimpleStatement>
 <SimpleStatement> ::= <PrintStmt> | <ScanStmt> | <AssignStmt>
 
-<IfStmt> ::= "if" "(" <Condition> ")" "then" <SimpleBlockStmt> | "if" "(" <Condition> ")" "then" <SimpleBlockStmt> "else" <SimpleBlockStmt> ";"
+<IfStmt> ::= "if" "(" <Condition> ")" <SimpleBlockStmt> | "if" "(" <Condition> ")" "else" <SimpleBlockStmt> ";"
 <Condition> ::= <Expression> <RelOp> <Expression> | <Expression>
 <RelOp> ::= "=" | ">" | "<" | ">=" | "<=" | "<>"    
 
