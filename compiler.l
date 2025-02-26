@@ -52,8 +52,8 @@ int search(node *head, const char *name){
 }
 
 int is_keyword(const char *str) {
-    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main","then", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan","to","do"};
-    for (int i = 0; i < 21; i++) {
+    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan","to","do"};
+    for (int i = 0; i < 20; i++) {
         if (strcmp(str, keywords[i]) == 0) return 1;
     }
     return 0;
@@ -92,9 +92,9 @@ void add_variable(const char *str) {
 %s VARDECL_STATE
 
 KEYWORD int|char|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan|then
-IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
+IDENTIFIER [a-zA-Z0-9_]+
 INTEGER \(([0-9]+),[ ]*([0-9]+)\)
-CHARACTER '\?.'
+CHARACTER '[^\\']'|'\n'|'\t'|'\r'|'\0'|'\\'
 STRING \"([^"\\]|\\.)*\"
 ARITH_OP [+\-*/%]
 ASSIGN_OP :=|\+=|-=|\*=|\/=|%=
@@ -131,11 +131,17 @@ WHITESPACE [ \t\n\r]+
         if(is_keyword(yytext)){
             printf("%s KEYWORD\n", yytext);
         }
-        else{
-            printf("%s LEXICAL ERROR: Invalid variable type\n", yytext);
+        else if(check(yytext)){
+                printf("%s IDENTIFIER\n", yytext);
+        } else{
+            printf("%s LEXICAL ERROR : Invalid identifier\n",yytext);
         }
         expecting_type = 0;
     }
+}
+
+<VARDECL_STATE>\[[0-9]+\] {
+    printf("%s ARRAY SIZE\n", yytext);
 }
 
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\); {
