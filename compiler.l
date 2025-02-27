@@ -104,44 +104,44 @@ COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
 WHITESPACE [ \t\n\r]+
 
 %%
-"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("%s KEYWORD\n", yytext); }
-"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("%s KEYWORD\n", yytext); }
-"VarDecl"   {printf("%s KEYWORD\n", yytext); }
+"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("%-50s KEYWORD\n", yytext); }
+"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("%-50s KEYWORD\n", yytext); }
+"VarDecl"   {printf("%-50s KEYWORD\n", yytext); }
 
 
 <VARDECL_STATE>{IDENTIFIER} {
     if(!expecting_type){
         if(is_keyword(yytext)){
-            printf("%s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
+            printf("%-50s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
         }
         else if(is_duplicate(yytext)){
-            printf("%s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
+            printf("%-50s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
         }
         else{
             if(check(yytext)){
                 add_variable(yytext);
-                printf("%s IDENTIFIER\n", yytext);
+                printf("%-50s IDENTIFIER\n", yytext);
             } else{
-                printf("%s LEXICAL ERROR : Invalid identifier\n",yytext);
+                printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
             }
         }
         expecting_type = 1;
     }
     else{
         if(is_keyword(yytext)){
-            printf("%s KEYWORD\n", yytext);
+            printf("%-50s KEYWORD\n", yytext);
         }
         else if(check(yytext)){
-                printf("%s IDENTIFIER\n", yytext);
+                printf("%-50s IDENTIFIER\n", yytext);
         } else{
-            printf("%s LEXICAL ERROR : Invalid identifier\n",yytext);
+            printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
         }
         expecting_type = 0;
     }
 }
 
 <VARDECL_STATE>\[[0-9]+\] {
-    printf("%s ARRAY SIZE\n", yytext);
+    printf("%-50s ARRAY SIZE\n", yytext);
 }
 
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\); {
@@ -172,7 +172,7 @@ WHITESPACE [ \t\n\r]+
     if(str[4] == '(') {
 
         if(cnt_formatted != count){
-            printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
         }
         else{
         int flag = 1;
@@ -190,26 +190,26 @@ WHITESPACE [ \t\n\r]+
                 flag = 1;
             }
             else{
-                printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+                printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
                 break;
             }
         }
         }
         if(flag == 0){
-            printf("%s Valid Input Statement\n", yytext);
+            printf("%-50s Valid Input Statement\n", yytext);
         }
         else{
-            printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
         }
         }
         }
     
     else{
         if(cnt_formatted != count){
-            printf("%s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+            printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
         }
         else{
-        printf("%s Valid Output Statement\n", yytext);
+        printf("%-50s Valid Output Statement\n", yytext);
         }
     }
     
@@ -218,23 +218,23 @@ WHITESPACE [ \t\n\r]+
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
     char* str = yytext;
     if(str[4] == '(') {
-        printf("%s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
     }
     else{
-        printf("%s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+        printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
     }
 }
 
 
 {IDENTIFIER}   {
     if(is_keyword(yytext)){
-        printf("%s KEYWORD\n", yytext);
+        printf("%-50s KEYWORD\n", yytext);
     }
     else{
-        printf("%s IDENTIFIER\n", yytext);
+        printf("%-50s IDENTIFIER\n", yytext);
     }
     /*else if(is_duplicate(yytext)) {
-        printf("%s IDENTIFIER\n", yytext);
+        printf("%-50s IDENTIFIER\n", yytext);
     }
     else{
         printf("LEXICAL ERROR : Undefined identifier\n");
@@ -255,40 +255,33 @@ WHITESPACE [ \t\n\r]+
             temp /= 10;
         }
         if (valid) {
-            printf("%s INTEGER CONSTANT\n", yytext);
+            printf("%-50s INTEGER CONSTANT\n", yytext);
         } else {
-            printf("%s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
+            printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
         }
     } else {
-        printf("%s LEXICAL ERROR: Invalid Integer Constant", yytext);
+        printf("%-50s LEXICAL ERROR: Invalid Integer Constant", yytext);
     }
 }
-{CHARACTER}    { printf("%s CHARACTER\n", yytext); }
-{STRING}       { printf("%s STRING\n", yytext); }
+{CHARACTER}    { printf("%-50s CHARACTER\n", yytext); }
+{STRING}       { printf("%-50s STRING\n", yytext); }
 
-{ARITH_OP}     { printf("%s ARITHMETIC OPERATOR\n", yytext); }
-{ASSIGN_OP}    { printf("%s ASSIGNMENT OPERATOR\n", yytext); }
-{REL_OP}       { printf("%s RELATIONAL OPERATOR\n", yytext); }
+{ARITH_OP}     { printf("%-50s ARITHMETIC OPERATOR\n", yytext); }
+{ASSIGN_OP}    { printf("%-50s ASSIGNMENT OPERATOR\n", yytext); }
+{REL_OP}       { printf("%-50s RELATIONAL OPERATOR\n", yytext); }
 
-{SEPARATOR}    { printf("%s SEPARATOR\n", yytext); }
-{COMMENT}      { printf("%s COMMENT\n",yytext); }
+{SEPARATOR}    { printf("%-50s SEPARATOR\n", yytext); }
+{COMMENT}      { printf("%-50s COMMENT\n",yytext); }
 {WHITESPACE}   { /* Ignore whitespace */ }
 
-.              { printf("%s LEXICAL ERROR\n", yytext); }
+.              { printf("%-50s LEXICAL ERROR\n", yytext); }
 
 %%
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-        return 1;
-    }
-    FILE *file = fopen(argv[1], "r");
-    if (!file) {
-        perror("Error opening file");
-        return 1;
-    }
+int main() {
+    FILE *file = fopen("input.txt", "r");
     yyin = file;
+    printf("%-50s %-50s\n", "LEXEME", "TOKEN TYPE");
     yylex();
     fclose(file);
     return 0;
