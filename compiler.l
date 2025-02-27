@@ -52,8 +52,8 @@ int search(node *head, const char *name){
 }
 
 int is_keyword(const char *str) {
-    const char *keywords[] = {"int", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan"};
-    for (int i = 0; i < 17; i++) {
+    const char *keywords[] = {"int","char", "float", "if", "else", "while", "for", "main", "begin", "end", "input", "output", "program", "VarDecl", "inc", "dec", "print", "scan","to","do"};
+    for (int i = 0; i < 20; i++) {
         if (strcmp(str, keywords[i]) == 0) return 1;
     }
     return 0;
@@ -89,10 +89,12 @@ void add_variable(const char *str) {
 }
 %}
 
-KEYWORD int|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan
-IDENTIFIER [a-zA-Z_][a-zA-Z0-9_]*
+%s VARDECL_STATE
+
+KEYWORD int|char|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan|then
+IDENTIFIER [a-zA-Z0-9_]+
 INTEGER \(([0-9]+),[ ]*([0-9]+)\)
-CHARACTER '\?.'
+CHARACTER '[^\\']'|'\n'|'\t'|'\r'|'\0'|'\\'
 STRING \"([^"\\]|\\.)*\"
 ARITH_OP [+\-*/%]
 ASSIGN_OP :=|\+=|-=|\*=|\/=|%=
@@ -102,39 +104,141 @@ COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
 WHITESPACE [ \t\n\r]+
 
 %%
-"VarDecl"      {if(c){flag = 1;c=0;}; expecting_type = 0; printf("KEYWORD: %s\n", yytext); }
-"end"          { flag = 0; printf("KEYWORD: %s\n", yytext); }
+"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("%-50s KEYWORD\n", yytext); }
+"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("%-50s KEYWORD\n", yytext); }
+"VarDecl"   {printf("%-50s KEYWORD\n", yytext); }
 
-{IDENTIFIER}   {
-    if (flag && !expecting_type) { 
-        if (is_keyword(yytext)) {
-            printf("LEXICAL ERROR: Keyword used as identifier: %s\n", yytext);
-        } else if (flag && is_duplicate(yytext)) {
-            printf("LEXICAL ERROR: Duplicate variable declaration: %s\n", yytext);
-        } else{
+
+<VARDECL_STATE>{IDENTIFIER} {
+    if(!expecting_type){
+        if(is_keyword(yytext)){
+            printf("%-50s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
+        }
+        else if(is_duplicate(yytext)){
+            printf("%-50s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
+        }
+        else{
             if(check(yytext)){
                 add_variable(yytext);
-                printf("IDENTIFIER (variable name): %s\n", yytext);
+                printf("%-50s IDENTIFIER\n", yytext);
             } else{
-                printf("LEXICAL ERROR : Invalid Variable Name \n");
+                printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
             }
         }
-        expecting_type = 1; 
-    } else if (flag && expecting_type) { 
-        if (!is_keyword(yytext)) {
-            printf("LEXICAL ERROR: Invalid variable type: %s\n", yytext);
-        } else {
-            printf("IDENTIFIER (variable type): %s\n", yytext);
-        }
-        expecting_type = 0; 
-    } else if(!flag && is_keyword(yytext)){
-        printf("KEYWORD: %s\n", yytext);
-    }else if(is_duplicate(yytext)) {
-        printf("IDENTIFIER: %s\n", yytext);
+        expecting_type = 1;
     }
     else{
-        printf("LEXICAL ERROR : No variable matching\n");
+        if(is_keyword(yytext)){
+            printf("%-50s KEYWORD\n", yytext);
+        }
+        else if(check(yytext)){
+                printf("%-50s IDENTIFIER\n", yytext);
+        } else{
+            printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
+        }
+        expecting_type = 0;
     }
+}
+
+<VARDECL_STATE>\[[0-9]+\] {
+    printf("%-50s ARRAY SIZE\n", yytext);
+}
+
+("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\); {
+    char* str = yytext;
+    int cnt_formatted = 0;
+    for(int i = 0; i < strlen(str); i++){
+        if(str[i] == '@'){
+            cnt_formatted++;
+        }
+    }
+
+    char *last_quote = strrchr(str, '"');
+    int count = 0;
+    char *ptr = last_quote + 1;
+    while (*ptr) {
+        if (strncmp(ptr, "(", 1) == 0) {
+            ptr++;
+            while (*ptr && *ptr != ')') {
+                ptr++;
+            }
+        } 
+        else if(strncmp(ptr, ",", 1) == 0){
+            count++;
+        }
+        ptr++;
+        
+    }
+    if(str[4] == '(') {
+
+        if(cnt_formatted != count){
+            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        }
+        else{
+        int flag = 1;
+        char *start_quote = strchr(str, '"');
+        char *end_quote = strrchr(str, '"');
+        if (start_quote && end_quote && start_quote != end_quote) {
+            for (char *ptr = start_quote + 1; ptr < end_quote; ptr++) {
+            if(isspace(*ptr)){
+                continue;
+            }
+            else if(flag ==1 && *ptr == '@'){
+                flag = 0;
+            }
+            else if(flag == 0 && *ptr == ','){
+                flag = 1;
+            }
+            else{
+                printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+                break;
+            }
+        }
+        }
+        if(flag == 0){
+            printf("%-50s Valid Input Statement\n", yytext);
+        }
+        else{
+            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        }
+        }
+        }
+    
+    else{
+        if(cnt_formatted != count){
+            printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+        }
+        else{
+        printf("%-50s Valid Output Statement\n", yytext);
+        }
+    }
+    
+}
+
+("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
+    char* str = yytext;
+    if(str[4] == '(') {
+        printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+    }
+    else{
+        printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+    }
+}
+
+
+{IDENTIFIER}   {
+    if(is_keyword(yytext)){
+        printf("%-50s KEYWORD\n", yytext);
+    }
+    else{
+        printf("%-50s IDENTIFIER\n", yytext);
+    }
+    /*else if(is_duplicate(yytext)) {
+        printf("%-50s IDENTIFIER\n", yytext);
+    }
+    else{
+        printf("LEXICAL ERROR : Undefined identifier\n");
+    }*/
 }
 
 {INTEGER} { 
@@ -151,40 +255,33 @@ WHITESPACE [ \t\n\r]+
             temp /= 10;
         }
         if (valid) {
-            printf("INTEGER (Base %d): %s\n", base, yytext);
+            printf("%-50s INTEGER CONSTANT\n", yytext);
         } else {
-            printf("LEXICAL ERROR: Invalid digit in base %d: %s\n", base, yytext);
+            printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
         }
     } else {
-        printf("LEXICAL ERROR: Invalid integer format (missing base): %s\n", yytext);
+        printf("%-50s LEXICAL ERROR: Invalid Integer Constant", yytext);
     }
 }
-{CHARACTER}    { printf("CHARACTER: %s\n", yytext); }
-{STRING}       { printf("STRING: %s\n", yytext); }
+{CHARACTER}    { printf("%-50s CHARACTER\n", yytext); }
+{STRING}       { printf("%-50s STRING\n", yytext); }
 
-{ARITH_OP}     { printf("ARITHMETIC OPERATOR: %s\n", yytext); }
-{ASSIGN_OP}    { printf("ASSIGNMENT OPERATOR: %s\n", yytext); }
-{REL_OP}       { printf("RELATIONAL OPERATOR: %s\n", yytext); }
+{ARITH_OP}     { printf("%-50s ARITHMETIC OPERATOR\n", yytext); }
+{ASSIGN_OP}    { printf("%-50s ASSIGNMENT OPERATOR\n", yytext); }
+{REL_OP}       { printf("%-50s RELATIONAL OPERATOR\n", yytext); }
 
-{SEPARATOR}    { printf("SEPARATOR: %s\n", yytext); }
-{COMMENT}      { printf("COMMENT\n"); }
+{SEPARATOR}    { printf("%-50s SEPARATOR\n", yytext); }
+{COMMENT}      { printf("%-50s COMMENT\n",yytext); }
 {WHITESPACE}   { /* Ignore whitespace */ }
 
-.              { printf("LEXICAL ERROR: %s\n", yytext); }
+.              { printf("%-50s LEXICAL ERROR\n", yytext); }
 
 %%
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-        return 1;
-    }
-    FILE *file = fopen(argv[1], "r");
-    if (!file) {
-        perror("Error opening file");
-        return 1;
-    }
+int main() {
+    FILE *file = fopen("input.txt", "r");
     yyin = file;
+    printf("%-50s %-50s\n", "LEXEME", "TOKEN TYPE");
     yylex();
     fclose(file);
     return 0;
