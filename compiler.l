@@ -244,25 +244,31 @@ WHITESPACE [ \t\n\r]+
 {INTEGER} { 
     int num, base;
     if (sscanf(yytext, "(%d, %d)", &num, &base) == 2) {
-        int valid = 1;
-        int temp = num;
-        while (temp > 0) {
-            int digit = temp % 10;
-            if (digit >= base) {
-                valid = 0;
-                break;
+        if(base==2 || base==8 || base==10){
+            int valid = 1;
+            int temp = num;
+            while (temp > 0) {
+                int digit = temp % 10;
+                if (digit >= base) {
+                    valid = 0;
+                    break;
+                }
+                temp /= 10;
             }
-            temp /= 10;
+            if (valid) {
+                printf("%-50s INTEGER CONSTANT\n", yytext);
+            } else {
+                printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
+            }
         }
-        if (valid) {
-            printf("%-50s INTEGER CONSTANT\n", yytext);
-        } else {
+        else{
             printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
         }
     } else {
-        printf("%-50s LEXICAL ERROR: Invalid Integer Constant", yytext);
+        printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
     }
 }
+
 {CHARACTER}    { printf("%-50s CHARACTER\n", yytext); }
 {STRING}       { printf("%-50s STRING\n", yytext); }
 
