@@ -1,35 +1,22 @@
 begin program:
-// single line comment
 begin VarDecl:
-(a, int); (b, int); (sum, int); (count, int);
+(a, int);
+(b, char);
+(c[10], int);
 end VarDecl
-a := (5, 10);
-b := (7, 8);
-sum := (0, 10);
-count := (4, 10);
 c := (10, 10);
-/* comment line1
-Comment line2
-*/
-scan("@, @", a);
-scan("@", a);
-if ( a > (20, 8) )
+b := (5, 10) * (10, 2) + ((4,8) - (7, 8) % (2, 10)) / (1001, 2);
+for a := a + (3, 10) to b * (1, 10) dec b % (2, 10) do
 begin
-a -= (1, 10);
-print("Value of a = @", a);
-end
-else
-begin
-b := b + (1, 8);
-print("Value of b = @", b);
+    print("a = @", a);
+    scan("@, @, @", b, a, a);
+
 end;
-while (count > (0, 10)) do
+
+while ( a <> (0, 10) ) do
 begin
-sum += count;
-count := count - (1, 10);
-end
-for a := (1, 10) to b + (10, 2) inc (1, 10) do
-begin
-print("a = @", a);
-end
+    print("Hi, A");
+end;
+
+
 end program

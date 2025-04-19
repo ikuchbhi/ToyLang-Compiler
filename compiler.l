@@ -1,7 +1,8 @@
 %{
-#include "bison.tab.h"
 #include <ctype.h>
 #include <stdio.h>
+#include "bison.tab.h"
+#include "ast-generator/ast.h"
 
 int flag = 0; 
 int expecting_type = 0;
@@ -90,12 +91,12 @@ int is_duplicate(const char *str) {
 int check(const char *str) {
     int len = strlen(str);
     if (len == 0) return 0; 
-    if (!isalpha(str[0])) return 0; 
+    if (!islower(str[0])) return 0; 
 
     int un = 0;
     
     for (int i = 0; i < len; i++) {
-        if (isalpha(str[i]) || isdigit(str[i])) {
+        if (islower(str[i]) || isdigit(str[i])) {
             continue; 
         }
         if (str[i] == '_') {
@@ -111,12 +112,14 @@ int check(const char *str) {
 void add_variable(const char *str) {
     insert(&variables_defined, str);
 }
+
+int main();
 %}
 
 %s VARDECL_STATE
 
 KEYWORD int|char|float|if|else|while|for|main|begin|end|input|output|program|VarDecl|inc|dec|print|scan|then
-IDENTIFIER [a-zA-Z0-9_]+
+IDENTIFIER [a-z][a-z0-9_]*
 INTEGER \(([0-9]+),[ ]*([0-9]+)\)
 CHARACTER '[^\\']'|'\n'|'\t'|'\r'|'\0'|'\\'
 STRING \"([^"\\]|\\.)*\"
@@ -128,29 +131,30 @@ COMMENT \/\*([^*]|\*+[^/])*\*+\/|\/\/.*
 WHITESPACE [ \t\n\r]+
 
 %%
-"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; printf("%-50s KEYWORD\n", yytext); return BEGIN_TOKEN; }
-"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); printf("%-50s KEYWORD\n", yytext); return END; }
-"VarDecl"   {printf("%-50s KEYWORD\n", yytext);  return VARDECL; }
+"begin"/{WHITESPACE}*"VarDecl"{WHITESPACE}*:      {if(c){BEGIN(VARDECL_STATE); c=0;}; expecting_type = 0; fprintf(yyout, "%-50s KEYWORD\n", yytext); return BEGIN_TOKEN; }
+"end"/{WHITESPACE}*"VarDecl"          { BEGIN(0); fprintf(yyout, "%-50s KEYWORD\n", yytext); return END; }
+"VarDecl"   {fprintf(yyout, "%-50s KEYWORD\n", yytext);  return VARDECL; }
 
 
 <VARDECL_STATE>{IDENTIFIER} {
     if(!expecting_type){
         if(is_keyword(yytext)){
-            printf("%-50s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Keyword is used as an identifier\n", yytext);
             return ERR;
         }
         else if(is_duplicate(yytext)){
-            printf("%-50s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Duplicate variable declaration\n", yytext);
             return ERR;
         }
         else{
             if(check(yytext)){
                 add_variable(yytext);
-                printf("%-50s IDENTIFIER\n", yytext);
+                fprintf(yyout, "%-50s IDENTIFIER\n", yytext);
                 expecting_type = 1;
+                yylval.str = strdup(yytext);
                 return IDENTIFIER;
             } else{
-                printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
+                fprintf(yyout, "%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
                 return ERR;
             }
         }
@@ -158,21 +162,25 @@ WHITESPACE [ \t\n\r]+
     else{
         expecting_type = 0;
         if(is_keyword(yytext)){
-            printf("%-50s KEYWORD\n", yytext);
+            fprintf(yyout, "%-50s KEYWORD\n", yytext);
+            yylval.str = strdup(yytext);
             return token_to_return(yytext);
         }
         else if(check(yytext)){
-                printf("%-50s IDENTIFIER\n", yytext);
+                fprintf(yyout, "%-50s IDENTIFIER\n", yytext);
+                yylval.str = strdup(yytext);
                 return IDENTIFIER;
         } else{
-            printf("%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR : Invalid identifier\n",yytext);
             return ERR;
         }
     }
 }
 
 <VARDECL_STATE>\[[0-9]+\] {
-    printf("%-50s ARRAY SIZE\n", yytext);
+    fprintf(yyout, "%-50s ARRAY SIZE\n", yytext);
+    yytext[yyleng - 1] = '\0';
+    yylval.decimalVal = atoi(yytext + 1); // Convert the string to an integer
     return ARRAY_SIZE;
 }
 
@@ -204,7 +212,7 @@ WHITESPACE [ \t\n\r]+
     if(str[4] == '(') {
 
         if(cnt_formatted != count){
-            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
             return ERR;
         }
         else{
@@ -223,19 +231,19 @@ WHITESPACE [ \t\n\r]+
                 flag = 1;
             }
             else{
-                printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+                fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
                 return ERR;
                 break;
             }
         }
         }
         if(flag == 0){
-            printf("%-50s Valid Input Statement\n", yytext);
+            fprintf(yyout, "%-50s Valid Input Statement\n", yytext);
             yyless(4);
             return SCAN;
         }
         else{
-            printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
             return ERR;
         }
         }
@@ -243,11 +251,11 @@ WHITESPACE [ \t\n\r]+
     
     else{
         if(cnt_formatted != count){
-            printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
             return ERR;
         }
         else{
-        printf("%-50s Valid Output Statement\n", yytext);
+        fprintf(yyout, "%-50s Valid Output Statement\n", yytext);
         yyless(5);
         return PRINT;
         }
@@ -258,11 +266,11 @@ WHITESPACE [ \t\n\r]+
 ("print"|"scan")\([ ]*{STRING}[ ]*([ ]*,[ ]*({IDENTIFIER}|{INTEGER}))*\) {
     char* str = yytext;
     if(str[4] == '(') {
-        printf("%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
+        fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Input Statement\n",yytext);
         return ERR;
     }
     else{
-        printf("%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
+        fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Output Statement\n",yytext);
         return ERR;
     }
 }
@@ -270,18 +278,19 @@ WHITESPACE [ \t\n\r]+
 
 {IDENTIFIER}   {
     if(is_keyword(yytext)){
-        printf("%-50s KEYWORD\n", yytext);
+        fprintf(yyout, "%-50s KEYWORD\n", yytext);
         return token_to_return(yytext);
     }
     else{
-        printf("%-50s IDENTIFIER\n", yytext);
+        fprintf(yyout, "%-50s IDENTIFIER\n", yytext);
+        yylval.str = strdup(yytext);
         return IDENTIFIER;
     }
     /*else if(is_duplicate(yytext)) {
-        printf("%-50s IDENTIFIER\n", yytext);
+        fprintf(yyout, "%-50s IDENTIFIER\n", yytext);
     }
     else{
-        printf("LEXICAL ERROR : Undefined identifier\n");
+        fprintf(yyout, "LEXICAL ERROR : Undefined identifier\n");
         return ERR;
     }*/
 }
@@ -300,45 +309,64 @@ WHITESPACE [ \t\n\r]+
             temp /= 10;
         }
         if (valid) {
-            // printf("%-50s INTEGER CONSTANT\n", yytext);
+            // fprintf(yyout, "%-50s INTEGER CONSTANT\n", yytext);
             if (base == 2) {
-                printf("%-50s BINARY CONSTANT\n", yytext);
-                // set value in union 
+                fprintf(yyout, "%-50s BINARY CONSTANT\n", yytext);
+                int len = snprintf(NULL, 0, "%d", num);
+                char *str = malloc(len + 1);
+                snprintf(str, len + 1, "%d", num); 
+                yylval.intVal.value = str;
+                yylval.intVal.base = 2;
                 return BINARY;
             } else if (base == 8) {
-                printf("%-50s OCTAL CONSTANT\n", yytext);
-                // set value in union
+                fprintf(yyout, "%-50s OCTAL CONSTANT\n", yytext);
+                int len = snprintf(NULL, 0, "%d", num);
+                char *str = malloc(len + 1);
+                snprintf(str, len + 1, "%d", num); 
+                yylval.intVal.value = str;
+                yylval.intVal.base = 8;
                 return OCTAL;
             } else if (base == 10) {
-                printf("%-50s DECIMAL CONSTANT\n", yytext);
-                // set value in union
+                fprintf(yyout, "%-50s DECIMAL CONSTANT\n", yytext);
+                int len = snprintf(NULL, 0, "%d", num);
+                char *str = malloc(len + 1);
+                snprintf(str, len + 1, "%d", num); 
+                yylval.intVal.value = str;
+                yylval.intVal.base = 10;
                 return DECIMAL;
             }
             else {
-                printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
+                fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
                 return ERR;
             }
         } else {
-            printf("%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
+            fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Integer Constant\n", yytext);
             return ERR;
         }
     } else {
-        printf("%-50s LEXICAL ERROR: Invalid Integer Constant", yytext);
+        fprintf(yyout, "%-50s LEXICAL ERROR: Invalid Integer Constant", yytext);
         return ERR;
     }
 }
-{CHARACTER}    { printf("%-50s CHARACTER\n", yytext); return CHARACTER; }
-{STRING}       { printf("%-50s STRING\n", yytext); return STRING; }
+{CHARACTER}    { fprintf(yyout, "%-50s CHARACTER\n", yytext); yylval.charVal = yytext[1]; return CHARACTER; }
+{STRING}       { 
+    fprintf(yyout, "%-50s STRING\n", yytext);
+    // Remove the first and last characters in the string ('"' and '"') 
+    // with pointer manipulation magic instead of creating a new string :)
+    yytext[yyleng - 1] = '\0'; 
+    yylval.str = strdup(yytext + 1); 
+    return STRING; 
+}
 
-{ARITH_OP}     { printf("%-50s ARITHMETIC OPERATOR\n", yytext); return yytext[0]; }
-":="           { printf("%-50s EQUAL OPERATOR\n",yytext); return EQ;}
-{ASSIGN_OP}    { printf("%-50s ASSIGNMENT OPERATOR\n", yytext); return ASSIGN_OP; }
-{REL_OP}       { printf("%-50s RELATIONAL OPERATOR\n", yytext); return REL_OP; }
+{ARITH_OP}     { fprintf(yyout, "%-50s ARITHMETIC OPERATOR\n", yytext); return yytext[0]; }
+":="           { fprintf(yyout, "%-50s EQUAL OPERATOR\n",yytext); return EQ;}
+{ASSIGN_OP}    { fprintf(yyout, "%-50s ASSIGNMENT OPERATOR\n", yytext); yylval.str = strdup(yytext); return ASSIGN_OP; }
+{REL_OP}       { fprintf(yyout, "%-50s RELATIONAL OPERATOR\n", yytext); yylval.str = strdup(yytext); return REL_OP; }
 
-{SEPARATOR}    { printf("%-50s SEPARATOR\n", yytext); return yytext[0]; }
+{SEPARATOR}    { fprintf(yyout, "%-50s SEPARATOR\n", yytext);  return yytext[0]; }
 {COMMENT}      { }
 {WHITESPACE}   { /* Ignore whitespace */ }
 
-.              { printf("%-50s LEXICAL ERROR\n", yytext); return ERR; }
+.              { fprintf(yyout, "%-50s LEXICAL ERROR\n", yytext); return ERR; }
 
 %%
