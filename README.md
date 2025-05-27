@@ -34,3 +34,4 @@ As shown in the diagram below, each stage is separated into its own folder.
 - Aman Ranjan (2022A7PS0141H)
 - Anirudh Agarwal (2022A7PS0034H)
 - Aryan Shrivastava (2022A7PS1653H)
+- Dhruv Gupta (2022A7PS0104H)
