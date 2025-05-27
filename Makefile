@@ -1,7 +1,7 @@
 # Flex File
-FLEX_FILE := compiler.l
+FLEX_FILE := lexical-analysis/lex.l
 # Bison File
-BISON_FILE := bison.y
+BISON_FILE := syntax-analysis/bison.y
 
 # Compiler Name
 COMPILER_NAME := a.out
