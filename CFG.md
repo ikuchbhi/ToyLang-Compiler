@@ -1,3 +1,8 @@
+# Context Free Grammar for ToyLang
+
+To successfully build the syntax analyser (and as a part of Part-1's submission), the CFG for ToyLang is as below, taking into account the specifications mentioned in [Project Description](/Project%20Description.pdf):
+
+```bnf
 <Program> ::= "begin program:" <VarDeclBlock> <Statements> "end program"
 
 <VarDeclBlock> ::= "begin VarDecl:" <Declarations> "end VarDecl"
@@ -58,3 +63,4 @@
 <FormattedScanString> ::= ^["](@([,][@])*)["]$
 
 <StringConstant> ::= ^["].*["]$
+```
