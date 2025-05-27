@@ -1,90 +1,48 @@
-# Flex File
-FLEX_FILE := lexical-analysis/lex.l
-# Bison File
-BISON_FILE := syntax-analysis/bison.y
+# Flex & Bison sources
+FLEX_FILE      := lexical-analysis/lex.l
+BISON_FILE     := syntax-analysis/bison.y
 
-# Compiler Name
-COMPILER_NAME := a.out
+# Compiler binary
+COMPILER_NAME  := a.out
 
-# Python Interpreter
-PY := python3
+# Generated sources
+FLEX_OUTPUT    := lex.yy.c
+BISON_TAB_C    := bison.tab.c
+BISON_TAB_H    := bison.tab.h
 
-# Python Script to generate AST
-AST_SCRIPT := ast-generator/print_ast.py
+# AST implementation
+AST_C          := ast-generator/ast.c
+AST_H          := ast-generator/ast.h
 
-# AST Output File
-AST_FILE := ast.txt
+# Symbol‐table implementation
+SYMTAB_C       := symbol-table/symbol_table.c
+SYMTAB_H       := symbol‐table/symbol_table.h
 
-# Generated Files
-# Flex Output
-FLEX_OUTPUT := lex.yy.c
-# Bison Output
-BISON_TAB_C := bison.tab.c
-BISON_TAB_H := bison.tab.h
+# Interpreter implementation
+INTERPRETER_C  := ast-interpreter/interpreter.c
+INTERPRETER_H  := ast-interpreter/interpreter.h
 
-# AST Files
-AST_C := ast-generator/ast.c 
-AST_H := ast-generator/ast.h
+# Default build: produce a.out
+all: $(COMPILER_NAME)
 
-# Default job: generate the compiler
-all: default
+# Link everything into the final compiler
+$(COMPILER_NAME): $(FLEX_OUTPUT) $(BISON_TAB_C) $(AST_C) $(SYMTAB_C) $(INTERPRETER_C)
+	$(CC) -o $@ \
+	    $(FLEX_OUTPUT) \
+	    $(BISON_TAB_C) \
+	    $(AST_C) \
+	    $(SYMTAB_C) \
+	    $(INTERPRETER_C) \
+	    -lfl
 
-default: flex bison
-	@echo "Compiling the Toy compiler..."
-	@echo ">> $(CC) -o $(COMPILER_NAME) -lfl $(FLEX_OUTPUT) $(BISON_TAB_C) $(AST_C)"
-	@$(CC) -o $(COMPILER_NAME) $(FLEX_OUTPUT) $(BISON_TAB_C) $(AST_C) -lfl
-	@echo "Compilation complete."
-	@echo "Run ./$(COMPILER_NAME) <input_file> <output_file> to execute."
+# Generate the Flex scanner
+$(FLEX_OUTPUT): $(FLEX_FILE)
+	flex $(FLEX_FILE)
 
-bison:
-	@echo "Generating Bison parser..."
-	@echo ">> bison -d $(BISON_FILE) -Wnone"
-	@bison -d $(BISON_FILE) -Wnone
-	@echo "Bison parser generated."
-	@echo "\n"
+# Generate the Bison parser (and header)
+$(BISON_TAB_C) $(BISON_TAB_H): $(BISON_FILE)
+	bison -d $(BISON_FILE) -Wnone
 
-flex:
-	@echo "Generating Flex scanner..."
-	@echo ">> flex $(FLEX_FILE)"
-	@flex $(FLEX_FILE)
-	@echo "Flex scanner generated."
-	@echo "\n"
-
-# Debug job: generate the compiler with debug mode enabled
-debug: bison_debug flex_debug ast
-	@echo "Compiling the Toy compiler in debug mode..."
-	@echo ">> $(CC) -o $(COMPILER_NAME) -lfl $(FLEX_OUTPUT) $(BISON_TAB_C) $(AST_C)"
-	@$(CC) -o $(COMPILER_NAME) -lfl $(FLEX_OUTPUT) $(BISON_TAB_C) $(AST_C)
-	@echo "Debug compilation complete."
-	@echo "Run ./$(COMPILER_NAME) <input_file> <output_file> to execute."
-
-bison_debug:
-	@echo "Generating Bison parser..."
-	@echo ">> bison -d -t $(BISON_FILE) --debug"
-	@bison -d -t $(BISON_FILE) --debug
-	@echo "Bison parser generated."
-	@echo "\n"
-
-
-flex_debug:
-	@echo "Generating Flex scanner..."
-	@echo ">> flex $(FLEX_FILE)"
-	@flex $(FLEX_FILE)
-	@echo "Flex scanner generated."
-	@echo "\n"
-
-# Run the Python script to pretty-print the AST
-ast:
-	@echo "Generating AST..."
-	@echo ">> $(PY) $(AST_SCRIPT) > $(AST_FILE)"
-	@echo "Enter the output file name: "
-	@$(PY) -u $(AST_SCRIPT) > $(AST_FILE)
-	@echo "AST generation complete. See $(AST_FILE) for the output."
-	@echo "\n"
-
-# Clean job: remove generated files
+# Clean up generated files
 clean:
-	@echo "Cleaning up generated files..."
-	@echo ">> rm -rf $(BISON_TAB_C) $(BISON_TAB_H) $(FLEX_OUTPUT) $(COMPILER_NAME) $(AST_FILE)"
-	@rm -rf $(BISON_TAB_C) $(BISON_TAB_H) $(FLEX_OUTPUT) $(COMPILER_NAME) $(AST_FILE)
-	@echo "\n"
+	rm -f $(BISON_TAB_C) $(BISON_TAB_H) $(FLEX_OUTPUT) $(COMPILER_NAME)
