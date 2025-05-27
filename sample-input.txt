@@ -1,22 +1,23 @@
 begin program:
+
 begin VarDecl:
 (a, int);
 (b, char);
 (c[10], int);
 end VarDecl
+
 c := (10, 10);
 b := (5, 10) * (10, 2) + ((4,8) - (7, 8) % (2, 10)) / (1001, 2);
+
 for a := a + (3, 10) to b * (1, 10) dec b % (2, 10) do
 begin
     print("a = @", a);
     scan("@, @, @", b, a, a);
-
 end;
 
-while ( a <> (0, 10) ) do
+while (a <> (0, 10)) do
 begin
     print("Hi, A");
 end;
-
 
 end program
