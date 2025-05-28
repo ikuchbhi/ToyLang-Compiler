@@ -3,7 +3,7 @@ FLEX_FILE      := lexical-analysis/lex.l
 BISON_FILE     := syntax-analysis/bison.y
 
 # Compiler binary
-COMPILER_NAME  := a.out
+COMPILER_NAME  := toyc
 
 # Generated sources
 FLEX_OUTPUT    := lex.yy.c
