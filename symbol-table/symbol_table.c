@@ -44,7 +44,7 @@ int insertIntoSymbolTable(const char *name, SymbolType type, int size)
     return 0;
 }
 
-SymbolTableEntry *sym_lookup(const char *name)
+SymbolTableEntry *lookupFromSymbolTable(const char *name)
 {
     unsigned long h = custom_string_hash(name) % HASH_SIZE;
     for (SymbolTableEntry *e = table[h]; e; e = e->next)
@@ -62,21 +62,21 @@ void printSymbolTable(void)
     {
         for (SymbolTableEntry *e = table[i]; e; e = e->next)
         {
-            char *type[7];
+            char type[8];
 
             switch (e->type)
             {
             case TYPE_INT:
-                snprintf(type, 3, "int");
+                snprintf(type, sizeof(type), "int");
                 break;
             case TYPE_CHAR:
-                snprintf(type, 3, "char");
+                snprintf(type, sizeof(type), "char");
                 break;
             case TYPE_INT_ARRAY:
-                snprintf(type, 3, "int[]");
+                snprintf(type, sizeof(type), "int[]");
                 break;
             case TYPE_CHAR_ARRAY:
-                snprintf(type, 3, "char[]");
+                snprintf(type, sizeof(type), "char[]");
                 break;
             default:
                 break;

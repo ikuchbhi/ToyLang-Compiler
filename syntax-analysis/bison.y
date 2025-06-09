@@ -437,14 +437,23 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Usage: %s <input_file> <output_file>\n", argv[0]);
         return 1;
     }
-    
+
     if (argc > 1) {
         FILE* inputFile = fopen(argv[1], "r");
         FILE *outputFile = fopen(argv[2], "w");
+        
         if (!inputFile) {
             fprintf(stderr, "Cannot open file %s\n", argv[1]);
             return 1;
         }
+
+        // Ensure input file has extension 'toy'
+        if(strcmp(strrchr(argv[1], '\0') - 4, ".toy") != 0)
+        {
+            fprintf(stderr, "Invalid input file: input file must have extension .toy");
+            return 1;
+        }
+
         yyin = inputFile;
         yyout = outputFile;
     }

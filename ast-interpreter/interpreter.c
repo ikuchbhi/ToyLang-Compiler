@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "interpreter.h"
-#include "../symbol-table/symbol_table.h"
 #include "../ast-generator/ast.h"
+#include "../symbol-table/symbol_table.h"
 
 static int semanticErrorCount = 0;
 
@@ -16,7 +16,7 @@ int runSemanticAnalysis(ASTNode *root)
     return semanticErrorCount;
 }
 
-static void checkStatementBlock(ASTNode *block)
+void checkStatementBlock(ASTNode *block)
 {
     for (ASTNode *cur = block->components; cur != NULL; cur = cur->nextNode)
     {
@@ -138,7 +138,7 @@ static void checkStatementBlock(ASTNode *block)
     }
 }
 
-static void checkExpression(ASTNode *node, SymbolType *outType)
+void checkExpression(ASTNode *node, SymbolType *outType)
 {
     if (!node)
     {
@@ -209,14 +209,14 @@ static void checkExpression(ASTNode *node, SymbolType *outType)
     }
 }
 
-static void executeProgram(ASTNode *node)
+void executeProgram(ASTNode *node)
 {
     ASTNode *decls = node->components;
     ASTNode *stmts = decls->nextNode;
     executeStatementBlock(stmts);
 }
 
-static void executeStatementBlock(ASTNode *node)
+void executeStatementBlock(ASTNode *node)
 {
     for (ASTNode *cur = node->components; cur; cur = cur->nextNode)
     {
@@ -252,7 +252,7 @@ static void executeStatementBlock(ASTNode *node)
     }
 }
 
-static void executeAssignmentStatement(ASTNode *node)
+void executeAssignmentStatement(ASTNode *node)
 {
     EvalResult lhsEval = evaluateExpression(node->components);
     EvalResult rightEval = evaluateExpression(node->components->nextNode);
@@ -310,7 +310,7 @@ static void executeAssignmentStatement(ASTNode *node)
     e->isInitialized = true;
 }
 
-static void executePrintStatement(ASTNode *node)
+void executePrintStatement(ASTNode *node)
 {
     const char *fmt = node->data->stringValue;
     ASTNode *arg = node->components;
@@ -381,12 +381,12 @@ static void executePrintStatement(ASTNode *node)
     }
 }
 
-static void executeScanStatement(ASTNode *node)
+void executeScanStatement(ASTNode *node)
 {
     for (ASTNode *varNode = node->components; varNode; varNode = varNode->nextNode)
     {
         const char *name = varNode->data->stringValue;
-        SymbolTableEntry *e = sym_lookup(name);
+        SymbolTableEntry *e = lookupFromSymbolTable(name);
         
         if (e == NULL)
         {
@@ -426,7 +426,7 @@ static void executeScanStatement(ASTNode *node)
     }
 }
 
-static void executeIfStatement(ASTNode *node)
+void executeIfStatement(ASTNode *node)
 {
     EvalResult cond = evaluateExpression(node->components);
 
@@ -443,7 +443,7 @@ static void executeIfStatement(ASTNode *node)
     }
 }
 
-static void executeWhileStatement(ASTNode *node)
+void executeWhileStatement(ASTNode *node)
 {
     ASTNode *condExpr = node->components;
     ASTNode *bodyBlock = condExpr->nextNode;
@@ -459,7 +459,7 @@ static void executeWhileStatement(ASTNode *node)
     }
 }
 
-static void executeForStatement(ASTNode *node)
+void executeForStatement(ASTNode *node)
 {
     ASTNode *assignInit = node->components;
     ASTNode *termExpr = assignInit->nextNode;
@@ -526,7 +526,7 @@ EvalResult evaluateExpression(ASTNode *node)
 
         case AST_VAR:
         {
-            SymbolTableEntry *e = sym_lookup(node->data->stringValue);
+            SymbolTableEntry *e = lookupFromSymbolTable(node->data->stringValue);
             if (e != NULL)
             {
                 fprintf(stderr, "Undeclared variable '%s'\n", node->data->stringValue);

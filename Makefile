@@ -45,4 +45,4 @@ $(BISON_TAB_C) $(BISON_TAB_H): $(BISON_FILE)
 
 # Clean up generated files
 clean:
-	rm -f $(BISON_TAB_C) $(BISON_TAB_H) $(FLEX_OUTPUT) $(COMPILER_NAME)
+	rm -rf $(BISON_TAB_C) $(BISON_TAB_H) $(FLEX_OUTPUT) $(COMPILER_NAME)

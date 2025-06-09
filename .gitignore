@@ -10,6 +10,8 @@
 *.obj
 *.elf
 *.yy.c
+*.tab.c
+*.tab.h
 
 # Linker output
 *.ilk

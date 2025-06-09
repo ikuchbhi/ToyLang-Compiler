@@ -1,5 +1,6 @@
 import re
 from nltk.tree import *
+import sys
 
 # Empty tree text by default, will be populated from file below
 tree = ""
@@ -28,4 +29,12 @@ else:
     sanitized_tree = tree
 
 # Corrected tree representation with explicit binary structure
-Tree.fromstring(sanitized_tree, brackets='()', read_leaf=None, read_node=None).pretty_print(unicodelines=True, nodedist=5)
+# Route tree output directly to file instead of console
+tree_output_file = "ast_tree.txt"  # or ask for input filename
+with open(tree_output_file, 'w', encoding='utf-8') as f:
+    original_stdout = sys.stdout
+    sys.stdout = f
+    Tree.fromstring(sanitized_tree, brackets='()', read_leaf=None, read_node=None).pretty_print(unicodelines=True, nodedist=5)
+    sys.stdout = original_stdout
+
+print(f"Tree saved to {tree_output_file}")
