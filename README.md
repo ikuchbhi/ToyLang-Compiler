@@ -4,6 +4,9 @@ This repo contains our implementation of ToyLang, a programming language develop
 
 ## Features
 
+> ⚠️ Note:
+> ToyLang currently supports only single-line `print`, no nested loops/blocks or `scan`, inline with the required deliverables.
+
 ToyLang's features and syntax are documented well in the [Project Description](/Project%20Description.pdf) file, along with a [Context Free Grammar](/CFG.md) for the same.
 
 ## How to Run
@@ -32,7 +35,7 @@ As shown in the diagram below, each stage is separated into its own folder.
         phase3("Phase 3 - Semantic Analysis")
         phase4("Phase 4 - Three Address Code generation")
         phase5("Phase 5 - Program output (Interpret the AST)")
-      
+    
         %% Edges %%
         start --> phase1
         phase1 --> phase2
